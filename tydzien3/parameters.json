@@ -1,0 +1,22 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "vm-admin-username": {
+            "reference": {
+                "keyVault": {
+                    "id": "/subscriptions/d1e780a3-501e-4032-86a6-c368dc406ac6/resourceGroups/archmas/providers/Microsoft.KeyVault/vaults/armtest-archmas"
+                },
+                "secretName": "vm-admin-username"
+            }
+        },
+        "vm-admin-password": {
+            "reference": {
+                "keyVault": {
+                    "id": "/subscriptions/d1e780a3-501e-4032-86a6-c368dc406ac6/resourceGroups/archmas/providers/Microsoft.KeyVault/vaults/armtest-archmas"
+                },
+                "secretName": "vm-admin-password"
+            }
+        }
+    }
+}

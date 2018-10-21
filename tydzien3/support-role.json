@@ -1,0 +1,16 @@
+{
+    "Name": "Support monitor role",
+    "IsCustom": true,
+    "Description": "Role allowed to turn on and off virtual machines and contact support",
+    "Actions": [
+        "Microsoft.Compute/virtualMachines/*/read",
+        "Microsoft.Compute/virtualMachines/start/action",
+        "Microsoft.Compute/virtualMachines/restart/action",
+        "Microsoft.Compute/virtualMachines/powerOff/action",
+        "Microsoft.Support/*"
+    ],
+    "NotActions": [],
+    "AssignableScopes": [
+      "/subscriptions/d1e780a3-501e-4032-86a6-c368dc406ac6"
+    ]
+  }

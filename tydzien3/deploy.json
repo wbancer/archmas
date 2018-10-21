@@ -1,0 +1,204 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "vnet-name": {
+            "type": "string",
+            "defaultValue": "[concat('vnet-', resourceGroup().name)]",
+            "metadata": {
+                "description": "VNet name"
+            }
+        },
+        "vnet-address-prefix": {
+            "type": "string",
+            "defaultValue": "10.0.0.0/16",
+            "metadata": {
+                "description": "Address prefix"
+            }
+        },
+        "subnet-name": {
+            "type": "array",
+            "defaultValue": [
+                "[concat('subnet-ui-', resourceGroup().name)]",
+                "[concat('subnet-app-', resourceGroup().name)]"
+            ]
+        },
+        "subnet-address-prefix": {
+            "type": "array",
+            "defaultValue": [
+                "10.0.1.0/24",
+                "10.0.2.0/24"
+            ]
+        },
+        "nsg-name": {
+            "type": "array",
+            "defaultValue": [
+                "[concat('nsg-ui-', resourceGroup().name)]",
+                "[concat('nsg-app-', resourceGroup().name)]"
+            ]
+        },
+        "vm-name": {
+            "type": "array",
+            "defaultValue": [
+                "[concat('vm-ui-', resourceGroup().name)]",
+                "[concat('vm-app-', resourceGroup().name)]"
+            ]
+        },
+        "vm-admin-username": {
+            "type": "string"
+        },
+        "vm-admin-password": {
+            "type": "securestring"
+        },
+        "location": {
+            "type": "string",
+            "defaultValue": "[resourceGroup().location]",
+            "metadata": {
+                "description": "Location for all resources."
+            }
+        }
+    },
+    "variables": {
+        "allow-ssh-access": {
+            "name": "ssh",
+            "properties": {
+                "description": "Allow SSH access",
+                "protocol": "Tcp",
+                "sourcePortRange": "*",
+                "destinationPortRange": "22",
+                "sourceAddressPrefix": "Internet",
+                "destinationAddressPrefix": "*",
+                "access": "Allow",
+                "priority": 100,
+                "direction": "Inbound"
+            }
+        }
+    },
+    "resources": [
+        {
+            "apiVersion": "2018-06-01",
+            "type": "Microsoft.Network/virtualNetworks",
+            "name": "[parameters('vnet-name')]",
+            "location": "[parameters('location')]",
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": ["[parameters('vnet-address-prefix')]"]
+                }
+            }
+        },
+        {
+            "apiVersion": "2015-05-01-preview",
+            "type": "Microsoft.Network/networkSecurityGroups",
+            "name": "[parameters('nsg-name')[copyIndex()]]",
+            "location": "[parameters('location')]",
+            "properties": {
+                "securityRules": [
+                    "[variables('allow-ssh-access')]"
+                ]
+            },
+            "copy": {
+                "name": "nsgs-resources",
+                "count": 2
+            }
+        },
+        {
+            "apiVersion": "2018-06-01",
+            "type": "Microsoft.Network/virtualNetworks/subnets",
+            "location": "[parameters('location')]",
+            "name": "[concat(parameters('vnet-name'), '/', parameters('subnet-name')[copyIndex()])]",
+            "dependsOn": [
+                "[parameters('vnet-name')]",
+                "[parameters('nsg-name')[copyIndex()]]"
+            ],
+            "properties": {
+                "addressPrefix": "[parameters('subnet-address-prefix')[copyIndex()]]",
+                "networkSecurityGroup": {
+                    "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('nsg-name')[copyIndex()])]"
+                }
+            },
+            "copy": {
+                "name": "subnet-resources",
+                "count": 2
+            }
+        },
+        {
+            "name": "[concat('ip-', parameters('vm-name')[copyIndex()])]",
+            "type": "Microsoft.Network/publicIPAddresses",
+            "location": "[resourceGroup().location]",
+            "apiVersion": "2015-06-15",
+            "properties": {
+                "publicIPAllocationMethod": "Dynamic"
+            },
+            "copy": {
+                "name": "ip-resources",
+                "count": 2
+            }
+        },
+        {
+            "apiVersion": "2015-06-15",
+            "type": "Microsoft.Network/networkInterfaces",
+            "name": "[concat('nic-', parameters('vm-name')[copyIndex()])]",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[parameters('subnet-name')[copyIndex()]]",
+                "[concat('ip-', parameters('vm-name')[copyIndex()])]"
+            ],
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "ipconfig1",
+                        "properties": {
+                            "privateIPAllocationMethod": "Dynamic",
+                            "subnet": { "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('vnet-name'), parameters('subnet-name')[copyIndex()])]" },
+                            "publicIPAddress": { "id": "[resourceId('Microsoft.Network/publicIPAddresses', concat('ip-', parameters('vm-name')[copyIndex()]))]"
+                        }
+                    }
+                }
+              ]
+            },
+            "copy": {
+                "name": "nic-resources",
+                "count": 2
+            }
+        },
+        {
+            "apiVersion": "2016-04-30-preview",
+            "type": "Microsoft.Compute/virtualMachines",
+            "name": "[parameters('vm-name')[copyIndex()]]",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[concat('nic-', parameters('vm-name')[copyIndex()])]"
+            ],
+            "properties": {
+                "hardwareProfile": { "vmSize": "Basic_A0" },
+                "osProfile": {
+                    "computerName": "[parameters('vm-name')[copyIndex()]]",
+                    "adminUsername": "[parameters('vm-admin-username')]",
+                    "adminPassword": "[parameters('vm-admin-password')]"
+                },
+                "storageProfile": {
+                    "imageReference": {
+                        "publisher": "Canonical",
+                        "offer": "UbuntuServer",
+                        "sku": "18.04-LTS",
+                        "version": "latest"
+                    },
+                    "osDisk": {
+                        "name": "[concat(parameters('vm-name')[copyIndex()],'-','osdisk')]",
+                        "caching": "ReadWrite",
+                        "createOption": "FromImage"
+                    }
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        { "id": "[resourceId('Microsoft.Network/networkInterfaces', concat('nic-', parameters('vm-name')[copyIndex()]))]" }
+                    ]
+                }
+            },
+            "copy": {
+                "name": "ip-resources",
+                "count": 2
+            }
+        }
+    ]
+}
