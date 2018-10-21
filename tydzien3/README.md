@@ -32,7 +32,6 @@ Deployment został przetestowany przez zalogowanie się do wspomnianych maszyn d
 Wnioski wyniesione z robienia tego zadania:
 
  * keyvault poza samym dostępem roli (czy to usera, czy service principal) musi mie włączoną opcję template-deployment
-
  * w porównaniu do innych rozwiązań jakie miałem okazję używać szablony ARM są dość trudne w użyciu i w mojej ocenie nadmiernie skomplikowane (por. np. do terraform). Ich główną zaletą jest największa aktualność. Najwększą wadą jest brak możliwości użycia linked Templates które są podane jako pliki lokalne.
 
 
@@ -51,4 +50,4 @@ Wnioski z tego zadania:
  * role pozwalają na dokładniejsze precyzowanie dostępu dla poszczególnych osób
  * aby zapewnić możliwość restartu, trzeba zdefiniować osobą akcję (nie wystarczy start i powerOff).
  * aby zapewnić w ogóle dostęp do możliwości akcji z maszynami dana osoba musi mieć możliwość ich przeglądania na portalu (akcja read)
- * w narzędziu cli jest obecnie zgłoszony bug, który nie pozwala aktualizować (update) roli. Jako workaround - trzeba rolę usunąć i ponownie uruchomić.
+ * w narzędziu cli jest obecnie zgłoszony bug, który nie pozwala aktualizować (update) roli. Jako workaround - trzeba rolę usunąć i ponownie utworzyć.
