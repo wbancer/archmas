@@ -1,0 +1,19 @@
+{
+  "disabled": false,
+  "bindings": [
+    {
+      "name": "message",
+      "type": "queueTrigger",
+      "direction": "in",
+      "queueName": "messages-queue",
+      "connection": "AzureWebJobsStorage"
+    },
+    {
+      "tableName": "Messages",
+      "connection": "AzureWebJobsStorage",
+      "name": "Messages",
+      "type": "table",
+      "direction": "out"
+    }
+  ]
+}
